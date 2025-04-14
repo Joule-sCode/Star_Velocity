@@ -1,0 +1,88 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.fft import fft
+
+# Read the data from the files
+v, g = np.loadtxt('gaussian.dat', unpack=True)
+w, f = np.loadtxt('StarsData.txt', unpack=True)
+
+# Plot the initial data
+plt.plot(w, f, color='black')
+plt.ylim(0.2, 1.2)
+plt.show()
+
+# Center of the line 
+x1 = float(input("Enter the value for x1 (center of the line): "))  
+print("x1 =", x1)
+
+# Change to velocity scale
+v1 = 3e5 * (w - x1) / x1
+f1 = f
+
+# Plot the velocity data
+plt.plot(v1, f1, color='brown')
+plt.xlim(-2000, 2000) # To determine this limits you need to review your data first.
+plt.ylim(0.5, 1.5) 
+plt.show()
+
+# Set limits for the line
+x1 = float(input("Enter the first limit (x1): "))
+x2 = float(input("Enter the second limit (x2): "))
+plt.axvline(x=x1, color='white', linestyle='--')
+plt.axvline(x=x2, color='white', linestyle='--')
+
+y1 = 1.00   # To avoid undeclared variables error.
+
+# Select points within the limits
+mask = (v1 >= x1) & (v1 <= x2)
+v2 = v1[mask]
+f2 = f[mask]
+plt.plot(v2, f2, color='red')
+plt.show()
+
+# Generate boundaries for plotting the data
+vv1 = np.arange(min(v2), -5 + 0.2, 0.2)
+gg1 = np.ones_like(vv1)
+
+vv2 = np.arange(5.2, max(v2), 0.2)
+gg2 = np.ones_like(vv2)
+
+# Combine the data
+v3 = np.concatenate([vv1, v, vv2])
+g3 = np.concatenate([gg1, 1 - g * (1 - y1), gg2])
+
+print(len(g3), len(v3)) # To check if both arrays have the same dimensions before trying to plot.
+
+# Plot the data
+plt.plot(v3, g3, color='cyan')
+plt.show()
+
+# Interpolation of data
+multiplo = len(g3)
+i2 = np.ones(multiplo - len(f2)) * 1.0
+f3 = np.concatenate([i2, f2, i2])
+
+# Plot FFT
+fft1 = np.abs(fft(g3))
+fft2 = np.abs(fft(f3))
+
+# Plot FFT with correct x-axis range and avoid log10 of zero
+eps = 1e-10  # small value to prevent log10(0)
+plt.plot(np.log10(np.arange(1, len(fft1) + 1)), np.log10(np.maximum(fft1, eps)), color='green')
+plt.xlim(0, 1)
+plt.show()
+
+x1 = float(input("Enter x1 after FFT: ")) # We need to save this number becuase it will be necessary to compute the velocity.
+print("x1 =", x1)
+
+# Plot FFT for fft2 and avoid log10 of zero
+plt.plot(np.log10(np.arange(1, len(fft2) + 1)), np.log10(np.maximum(fft2, eps)), color='purple')
+plt.show()
+
+
+x2 = float(input("Enter x2 after FFT: ")) #This is the second and final number needed to compute the velocity of the Star.
+print("x2 =", x2)
+
+# Calculate v sin i
+v_sin_i = (x1 / x2) * (len(fft2) / len(v2)) * 10
+print('v sin i =', v_sin_i, 'km/s')
